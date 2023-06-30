@@ -1,29 +1,28 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
-import pandas as pd
-from tkinter import ttk
-from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
-from ttkthemes import ThemedStyle
-
+import tkinter as tk  # Importar el módulo tkinter para crear la interfaz gráfica
+from tkinter import filedialog, messagebox  # Importar funciones específicas de tkinter
+import pandas as pd  # Importar el módulo pandas para el manejo de datos
+from tkinter import ttk  # Importar clases y funciones específicas de tkinter
+from sklearn.preprocessing import LabelEncoder  # Importar el codificador de etiquetas de scikit-learn
+from sklearn.ensemble import RandomForestClassifier  # Importar el clasificador de bosques aleatorios de scikit-learn
+from sklearn.linear_model import LinearRegression  # Importar el modelo de regresión lineal de scikit-learn
+from ttkthemes import ThemedStyle  # Importar el módulo ttkthemes para aplicar estilos a la interfaz
 
 class AnalizadorDatos:
     def __init__(self):
         # Configuración de la interfaz gráfica
-        self.root = tk.Tk()
-        self.root.title("Predicción y Clasificación de Datos")
-        self.root.configure(bg="#282C34")
-        self.root.geometry("1000x1000")
-        style = ThemedStyle(self.root)
-        style.set_theme("equilux")  # Tema oscuro
+        self.root = tk.Tk()  # Crear la ventana principal
+        self.root.title("Predicción y Clasificación de Datos")  # Establecer el título de la ventana
+        self.root.configure(bg="#282C34")  # Establecer el color de fondo de la ventana
+        self.root.geometry("1000x1000")  # Establecer las dimensiones de la ventana
+        style = ThemedStyle(self.root)  # Crear un objeto ThemedStyle para aplicar estilos
+        style.set_theme("equilux")  # Establecer el tema oscuro "equilux"
 
-        self.data = None
-        self.columns = []
-        self.selected_columns = []
-        self.feature_columns = []
-        self.target_column = ""
-        self.model = None
+        self.data = None  # Variable para almacenar los datos cargados
+        self.columns = []  # Lista para almacenar los nombres de las columnas del archivo
+        self.selected_columns = []  # Lista para almacenar las columnas seleccionadas para el análisis
+        self.feature_columns = []  # Lista para almacenar las columnas seleccionadas como características de entrenamiento
+        self.target_column = ""  # Variable para almacenar la columna objetivo
+        self.model = None  # Variable para almacenar el modelo seleccionado
 
         # Etiqueta para mostrar el estado del archivo cargado
         self.file_label = tk.Label(
@@ -92,7 +91,7 @@ class AnalizadorDatos:
         self.mapping_table_frame = tk.Frame(self.root, bg='dark gray')
         self.mapping_table_frame.pack(pady=5, fill=tk.BOTH, expand=True)
 
-        self.apply_button_styles()
+        self.apply_button_styles()  # Aplicar estilos personalizados a los botones
 
     def apply_button_styles(self):
         # Aplicar estilos personalizados a los botones
@@ -112,128 +111,116 @@ class AnalizadorDatos:
         # Función para cargar un archivo CSV
         file_path = filedialog.askopenfilename(filetypes=[("Archivos CSV", "*.csv")])
         if file_path:
-            self.data = pd.read_csv(file_path)
-            self.file_label.config(text="Archivo cargado: " + file_path)
-            self.columns = self.data.columns.tolist()
-            self.analyze_button.config(state=tk.NORMAL)
+            self.data = pd.read_csv(file_path)  # Leer el archivo CSV y almacenar los datos en self.data
+            self.file_label.config(text="Archivo cargado: " + file_path)  # Actualizar la etiqueta del archivo cargado
+            self.columns = self.data.columns.tolist()  # Obtener los nombres de las columnas del archivo
+            self.analyze_button.config(state=tk.NORMAL)  # Habilitar el botón "Analizar Datos"
 
     def analizar_datos(self):
         # Función para analizar los datos del archivo cargado
-        self.selected_columns = []
-        mapping_table_data = []
+        self.selected_columns = []  # Lista para almacenar las columnas seleccionadas
+        mapping_table_data = []  # Lista para almacenar los datos de mapeo de categorías
 
         for column in self.columns:
-            data_type = str(self.data[column].dtype)
+            data_type = str(self.data[column].dtype)  # Obtener el tipo de datos de la columna
             if data_type == "object":
                 # Si es una columna de tipo "object", se realiza una codificación numérica
-                self.data[column].fillna("", inplace=True)
-                label_encoder = LabelEncoder()
-                self.data[column] = label_encoder.fit_transform(self.data[column])
+                self.data[column].fillna("", inplace=True)  # Rellenar los valores faltantes con una cadena vacía
+                label_encoder = LabelEncoder()  # Crear un codificador de etiquetas
+                self.data[column] = label_encoder.fit_transform(self.data[column])  # Codificar la columna
                 mapping_table_data.extend(
                     [(column, label_encoder.classes_[i], i) for i in range(len(label_encoder.classes_))])
+                # Guardar los datos de mapeo de categorías en la lista
             elif data_type == "float64" or data_type == "int64":
                 # Si es una columna numérica, se rellenan los valores faltantes con la media
                 self.data[column].fillna(self.data[column].mean(), inplace=True)
             else:
                 continue
-            self.selected_columns.append(column)
+            self.selected_columns.append(column)  # Agregar la columna a la lista de columnas seleccionadas
 
         # Actualización de la lista de columnas de entrenamiento y combobox de la columna objetivo
-        self.training_listbox.delete(0, tk.END)
-        self.training_listbox.insert(tk.END, *self.selected_columns)
+        self.training_listbox.delete(0, tk.END)  # Limpiar la lista de columnas de entrenamiento
+        self.training_listbox.insert(tk.END, *self.selected_columns)  # Insertar las columnas seleccionadas
         self.target_combobox.config(values=self.selected_columns, state="readonly")
-        self.model_combobox.config(state="readonly")
-        self.train_button.config(state=tk.NORMAL)
+        # Establecer los valores y el estado del combobox de la columna objetivo
+        self.model_combobox.config(state="readonly")  # Establecer el estado del combobox del tipo de modelo
+        self.train_button.config(state=tk.NORMAL)  # Habilitar el botón "Entrenar Modelo"
 
-        # Mostrar la tabla de mapeo de categorías
-        self.mostrar_tabla_mapeo(mapping_table_data)
+        self.mostrar_tabla_mapeo(mapping_table_data)  # Mostrar la tabla de mapeo de categorías
 
     def mostrar_tabla_mapeo(self, mapping_data):
         # Función para mostrar la tabla de mapeo de categorías en un marco
-        scrollbar = tk.Scrollbar(self.mapping_table_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar = tk.Scrollbar(self.mapping_table_frame)  # Crear una barra de desplazamiento vertical
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)  # Empaquetar la barra de desplazamiento en el lado derecho
 
         mapping_table = tk.Text(
             self.mapping_table_frame, yscrollcommand=scrollbar.set, bg='#282C34',
             fg='white', insertbackground='white', font=("Helvetica", 10))
-        mapping_table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Crear un widget de Texto para mostrar la tabla de mapeo
+        mapping_table.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Empaquetar el widget de Texto
 
-        mapping_table.insert(tk.END, "Columna\tValor Antiguo\tValor Nuevo\n")
+        mapping_table.insert(tk.END, "Columna\tValor Antiguo\tValor Nuevo\n")  # Insertar encabezados de la tabla
         for item in mapping_data:
             mapping_table.insert(tk.END, f"{item[0]}\t{item[1]}\t{item[2]}\n")
+            # Insertar los datos de mapeo en la tabla
 
-        mapping_table.config(state=tk.DISABLED)
-        scrollbar.config(command=mapping_table.yview)
+        scrollbar.config(command=mapping_table.yview)  # Configurar la barra de desplazamiento
 
     def entrenar_modelo(self):
-        # Función para entrenar el modelo de clasificación o predicción
-        self.feature_columns = self.training_listbox.curselection()
-        self.target_column = self.target_combobox.get()
+        # Función para entrenar el modelo seleccionado
+        self.feature_columns = self.training_listbox.curselection()  # Obtener las columnas seleccionadas
+        self.target_column = self.target_combobox.get()  # Obtener la columna objetivo
+        self.model = self.model_combobox.get()  # Obtener el tipo de modelo
 
-        if not self.feature_columns or not self.target_column:
-            messagebox.showwarning(
-                "Advertencia", "Debes seleccionar las columnas de entrenamiento y la columna objetivo.")
-            return
+        if self.feature_columns and self.target_column and self.model:
+            # Verificar que se haya seleccionado al menos una columna de entrenamiento,
+            # una columna objetivo y un tipo de modelo
+            if self.model == "Clasificación":
+                self.model = RandomForestClassifier()  # Crear un clasificador de bosques aleatorios
+            elif self.model == "Predicción":
+                self.model = LinearRegression()  # Crear un modelo de regresión lineal
 
-        self.feature_columns = [self.selected_columns[i] for i in self.feature_columns]
+            X = self.data.iloc[:, list(self.feature_columns)]  # Obtener las características de entrenamiento
+            y = self.data[self.target_column]  # Obtener la columna objetivo
 
-        if self.model_combobox.get() == "Clasificación":
-            self.model = RandomForestClassifier()
-        else:
-            self.model = LinearRegression()
+            self.model.fit(X, y)  # Entrenar el modelo con los datos de entrenamiento
 
-        X = self.data[self.feature_columns]
-        y = self.data[self.target_column]
+            messagebox.showinfo("Entrenamiento Exitoso", "El modelo se ha entrenado exitosamente.")
+            # Mostrar un cuadro de diálogo con el mensaje de entrenamiento exitoso
 
-        self.model.fit(X, y)
+            self.score_label.config(text="Ingresa los valores para hacer la predicción/clasificación:")
+            # Actualizar la etiqueta para ingresar los valores a predecir o clasificar
+            self.score_entries = {}  # Limpiar el diccionario de entradas de valores
+            for widget in self.score_frame.winfo_children():
+                widget.destroy()  # Eliminar los widgets anteriores del marco de valores a predecir/clasificar
 
-        messagebox.showinfo("Entrenamiento Completado", "El modelo ha sido entrenado exitosamente.")
+            for i, column in enumerate(self.feature_columns):
+                label = tk.Label(self.score_frame, text=self.selected_columns[column], bg='dark gray', fg='white')
+                label.grid(row=i, column=0, padx=5, pady=5)
+                entry = tk.Entry(self.score_frame, bg='white', fg='black')
+                entry.grid(row=i, column=1, padx=5, pady=5)
+                self.score_entries[column] = entry  # Guardar la entrada en el diccionario de entradas de valores
 
-        self.crear_entradas_puntuacion()
-        self.score_button.config(state=tk.NORMAL)
-
-    def crear_entradas_puntuacion(self):
-        # Función para crear las entradas de valores a predecir o clasificar
-        for widget in self.score_frame.winfo_children():
-            widget.destroy()
-
-        for i, column in enumerate(self.feature_columns):
-            label = tk.Label(
-                self.score_frame, text=column + ":", bg='#282C34', fg='white')
-            label.grid(row=i, column=0, padx=5, pady=5, sticky=tk.E)
-
-            entry = tk.Entry(self.score_frame, bg='#282C34', fg='white')
-            entry.grid(row=i, column=1, padx=5, pady=5)
-            self.score_entries[column] = entry
+            self.score_button.config(state=tk.NORMAL)  # Habilitar el botón "Calcular Score"
 
     def calcular_puntuacion(self):
         # Función para calcular el score de predicción o clasificación
         score_values = []
-        for column in self.feature_columns:
-            value = self.score_entries[column].get()
-            if value == "":
-                value = self.data[column].mean()
-            else:
-                try:
-                    value = float(value)
-                except ValueError:
-                    messagebox.showerror(
-                        "Error", "El valor ingresado para '{}' no es válido.".format(column))
-                    return
-            score_values.append(value)
+        for column, entry in self.score_entries.items():
+            value = entry.get()  # Obtener el valor ingresado en la entrada
+            if value:
+                score_values.append(float(value))  # Convertir el valor a float y agregarlo a la lista
 
-        score_data = [score_values]
+        if score_values:
+            score_values = [score_values]  # Convertir la lista en una lista de listas
+            score = self.model.predict(score_values)  # Calcular el score de predicción o clasificación
+            messagebox.showinfo("Score", f"El score calculado es: {score[0]}")
+            # Mostrar un cuadro de diálogo con el score calculado
 
-        if self.model_combobox.get() == "Clasificación":
-            prediction = self.model.predict(score_data)[0]
-            messagebox.showinfo(
-                "Clasificación", "La predicción para los valores ingresados es: '{}'".format(prediction))
-        else:
-            prediction = self.model.predict(score_data)[0]
-            messagebox.showinfo(
-                "Predicción", "El resultado de la predicción para los valores ingresados es: '{}'".format(prediction))
+    def iniciar_aplicacion(self):
+        self.root.mainloop()  # Iniciar el bucle principal de la aplicación
 
 
 if __name__ == "__main__":
-    analizador = AnalizadorDatos()
-    analizador.root.mainloop()
+    aplicacion = AnalizadorDatos()  # Crear una instancia de la clase AnalizadorDatos
+    aplicacion.iniciar_aplicacion()  # Iniciar la aplicación
